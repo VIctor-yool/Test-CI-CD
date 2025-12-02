@@ -1,41 +1,64 @@
-let nextId = 1;
-let dogs = [
-  { id: nextId++, name: "뽀삐", breed: "시츄", age: 3 },
-  { id: nextId++, name: "콩이", breed: "말티즈", age: 2 },
-  { id: nextId++, name: "루비", breed: "골든리트리버", age: 1 },
-];
+import prisma from "../src/prismaClient.js";
 
-export const getAllDogs = (req, res) => {
-  res.json(dogs);
+export const getAllDogs = async (req, res, next) => {
+  try {
+    const list = await prisma.zoo.findMany({ orderBy: { id: "asc" } });
+    res.json(list);
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const getDogById = (req, res) => {
-  const id = Number(req.params.id);
-  const dog = dogs.find((d) => d.id === id);
-  if (!dog) return res.status(404).json({ error: "Dog not found" });
-  res.json(dog);
+export const getDogById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const dog = await prisma.zoo.findUnique({ where: { id } });
+    if (!dog) return res.status(404).json({ error: "Dog not found" });
+    res.json(dog);
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const createDog = (req, res) => {
-  const { name, breed, age } = req.validatedBody || req.body;
-  const newDog = { id: nextId++, name, breed, age };
-  dogs.push(newDog);
-  res.status(201).json(newDog);
+export const createDog = async (req, res, next) => {
+  try {
+    const { name, breed, age } = req.validatedBody || req.body;
+    console.log("CREATE REQ BODY", { name, breed, age });
+    const created = await prisma.zoo.create({ data: { name, breed, age } });
+    console.log("PRISMA CREATED", created);
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const updateDog = (req, res) => {
-  const id = Number(req.params.id);
-  const dogIndex = dogs.findIndex((d) => d.id === id);
-  if (dogIndex === -1) return res.status(404).json({ error: "Dog not found" });
-  const { name, breed, age } = req.validatedBody || req.body;
-  dogs[dogIndex] = { ...dogs[dogIndex], name, breed, age };
-  res.json(dogs[dogIndex]);
+export const updateDog = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, breed, age } = req.validatedBody || req.body;
+    // check existence
+    const existing = await prisma.zoo.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: "Dog not found" });
+    const updated = await prisma.zoo.update({ where: { id }, data: { name, breed, age } });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const deleteDog = (req, res) => {
-  const id = Number(req.params.id);
-  const dogIndex = dogs.findIndex((d) => d.id === id);
-  if (dogIndex === -1) return res.status(404).json({ error: "Dog not found" });
-  const deleted = dogs.splice(dogIndex, 1)[0];
-  res.json({ deleted });
+export const deleteDog = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await prisma.zoo.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: "Dog not found" });
+    await prisma.zoo.delete({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 };
+
+process.on("SIGINT", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});

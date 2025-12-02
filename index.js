@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
@@ -14,6 +15,22 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send("안녕하세요 신율의 서버입니다.");
+});
+import prisma from "./src/prismaClient.js";
+
+// Debug endpoints (useful to verify remote deployment is using Prisma and DB)
+app.get("/debug/health", (req, res) => {
+  res.json({ ok: true, env: process.env.NODE_ENV || "development" });
+});
+
+app.get("/debug/db-count", async (req, res) => {
+  try {
+    const count = await prisma.zoo.count();
+    res.json({ count });
+  } catch (e) {
+    console.error("DEBUG DB COUNT ERROR", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // Dogs routes
