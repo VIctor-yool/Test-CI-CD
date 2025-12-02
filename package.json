@@ -4,9 +4,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "npx prisma generate && node index.js",
     "dev": "nodemon index.js",
-    "build": "prisma generate && next build",
+    "build": "npx prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
