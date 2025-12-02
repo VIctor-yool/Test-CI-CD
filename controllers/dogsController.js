@@ -1,4 +1,6 @@
-import prisma from "../src/prismaClient.js";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export const getAllDogs = async (req, res, next) => {
   try {
@@ -23,9 +25,7 @@ export const getDogById = async (req, res, next) => {
 export const createDog = async (req, res, next) => {
   try {
     const { name, breed, age } = req.validatedBody || req.body;
-    console.log("CREATE REQ BODY", { name, breed, age });
     const created = await prisma.zoo.create({ data: { name, breed, age } });
-    console.log("PRISMA CREATED", created);
     res.status(201).json(created);
   } catch (err) {
     next(err);
